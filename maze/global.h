@@ -14,8 +14,8 @@ enum MAZE_ENTITY_TYPE {
 };
 typedef enum MAZE_ENTITY_TYPE maze_entity_type;
 
-#define MAZE_HEIGHT 11
-#define MAZE_WIDTH 11
+#define MAZE_HEIGHT 64
+#define MAZE_WIDTH 64
 extern u_char maze[MAZE_HEIGHT][MAZE_WIDTH];
 
 void maze_init();

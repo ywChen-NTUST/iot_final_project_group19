@@ -50,32 +50,11 @@ void Display::lcdClear()
 {
     _lcd->clear();
     _lcd->home();
+    memset(_maze_display_prev, 0xff, sizeof(_maze_display_prev));
 }
 
 void Display::renderMaze(const int myuid, const int pos_x[], const int pos_y[])
 {
-    // for(int uid = 1; uid <= 2; uid++)
-    // {
-    //     lcdMsg("uid: " + String(uid), 0, 2*uid-2);
-    //     if (uid == myuid)
-    //         lcdMsg("*", 19, 2*uid-2);
-    //     lcdMsg("x: " + String(pos_x[uid]), 0, 2*uid-1);
-    //     lcdMsg("y: " + String(pos_y[uid]), 8, 2*uid-1);
-    // }
-
-    // if(maze[pos_y[myuid]][pos_x[myuid]] == MAZE_ENTITY_KEY)
-    //     lcdWrite(3, 19, 2*myuid-1);
-    // else if(maze[pos_y[myuid]][pos_x[myuid]] == MAZE_ENTITY_PLEASURE_PLATE)
-    //     lcdWrite(4, 19, 2*myuid-1);
-    // else if(maze[pos_y[myuid]][pos_x[myuid]] == MAZE_ENTITY_TRAP)
-    //     lcdWrite(5, 19, 2*myuid-1);
-    // else if(maze[pos_y[myuid]][pos_x[myuid]] == MAZE_ENTITY_BOX)
-    //     lcdWrite(6, 19, 2*myuid-1);
-    // else if(maze[pos_y[myuid]][pos_x[myuid]] == MAZE_ENTITY_BTN)
-    //     lcdWrite(7, 19, 2*myuid-1);
-    
-    u_char displayMaze[VIEW_HEIGHT][VIEW_WIDTH];
-    memset(displayMaze, 0, sizeof(displayMaze));
     int startX, startY, endX, endY;
     int userX = pos_x[myuid];
     int userY = pos_y[myuid];
@@ -84,8 +63,8 @@ void Display::renderMaze(const int myuid, const int pos_x[], const int pos_y[])
 
     if(userX - VIEW_WIDTH / 2 < 0)
         startX = 0;
-    else if(userX + VIEW_WIDTH / 2 > 255)
-        startX = 248;
+    else if(userX + VIEW_WIDTH / 2 > MAZE_WIDTH-1)
+        startX = MAZE_WIDTH - VIEW_WIDTH;
     else
         startX = userX - VIEW_WIDTH / 2;
     endX = startX + VIEW_WIDTH;
@@ -94,8 +73,8 @@ void Display::renderMaze(const int myuid, const int pos_x[], const int pos_y[])
 
     if(userY - VIEW_HEIGHT / 2 < 0)
         startY = 0;
-    else if(userY + VIEW_HEIGHT / 2 > 255)
-        startY = 248;
+    else if(userY + VIEW_HEIGHT / 2 > MAZE_HEIGHT-1)
+        startY = MAZE_HEIGHT - VIEW_HEIGHT;
     else
         startY = userY - VIEW_HEIGHT / 2;
     endY = startY + VIEW_HEIGHT;
@@ -106,83 +85,115 @@ void Display::renderMaze(const int myuid, const int pos_x[], const int pos_y[])
 
     for(int y = startY; y < endY; ++y){
         for(int x = startX; x < endX; ++x){
-            if(maze[y][x] != MAZE_ENTITY_NONE)
-                displayMaze[y - startY][x - startX] = maze[y][x];
-                // lcdWrite(maze[y][x], x - startX, y - startY);
-            else
-                displayMaze[y - startY][x - startX] = ' ';
+            if(maze[y][x] != _maze_display_prev[y - startY][x - startX])
+            {
+                _maze_display_prev[y - startY][x - startX] = maze[y][x];
+                if(maze[y][x] != MAZE_ENTITY_NONE)
+                    lcdWrite(maze[y][x], x - startX, y - startY);
+                else
+                    lcdWrite(' ', x - startX, y - startY);
+            }
+            // if(maze[y][x] != MAZE_ENTITY_NONE)
+            //     lcdWrite(maze[y][x], x - startX, y - startY);
+                // displayMaze[y - startY][x - startX] = maze[y][x];
+            // else
+            //     displayMaze[y - startY][x - startX] = ' ';
         }
     }
 
-    for(int y = 0; y < VIEW_HEIGHT; ++y)
-        lcdMsg(String((char*)displayMaze[y]), 0, y);
-
-    // displayMaze[userY - startY][userX - startX] = 7;
+    _maze_display_prev[userY - startY][userX - startX] = 7;
     lcdWrite(7, userX - startX, userY - startY);
     if (user2X >= startX && user2X < endX && user2Y >= startY && user2Y < endY)
-        // displayMaze[user2Y - startY][user2X - startX] = 7;
+    {
+        _maze_display_prev[user2Y - startY][user2X - startX] = 7;
         lcdWrite(7, user2X - startX, user2Y - startY);
+    }
     
     // _lcd->setCursor(0, 0);
 }
 
 void Display::showEvent(maze_animation_type animationid)
 {
-    char border[20];
     u_char entityId;
     switch (animationid)
     {
     case MAZE_ANIMATION_COVERPAGE:
+        lcdClear();
         lcdMsg("Welcome to Maze", 2, 0);
         lcdMsg("Press enter", 4, 2);
         lcdMsg("to create user", 3, 3);
         break;
     case MAZE_ANIMATION_KEY:
         entityId = MAZE_ENTITY_KEY;
-        memset(border, entityId, sizeof(border));
-        lcdMsg(String(border), 0, 0);
-        lcdMsg(String(border), 0, 3);
+        lcdClear();
         lcdMsg("You found a key!", 2, 1);
-        lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
-        lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
+        for(int i = 0; i < VIEW_WIDTH; i++)
+        {
+            lcdWrite(entityId, i, 0);
+            lcdWrite(entityId, i, 3);
+        }
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, VIEW_WIDTH-1, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, VIEW_WIDTH-1, 2);
         break;
     case MAZE_ANIMATION_TRAP:
-        // maze_entity_type entityId = MAZE_ENTITY_TRAP;
-        // memset(border, entityId, sizeof(border));
-        // lcdMsg(String(border), 0, 0);
-        // lcdMsg(String(border), 0, 3);
-        // lcdMsg("You trigger a trap", 1, 1);
-        // lcdMsg("Ouch", 8, 2);
-        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
-        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
+        entityId = MAZE_ENTITY_TRAP;
+        lcdClear();
+        lcdMsg("You trigger a trap", 1, 1);
+        lcdMsg("Ouch", 8, 2);
+        for(int i = 0; i < VIEW_WIDTH; i++)
+        {
+            lcdWrite(entityId, i, 0);
+            lcdWrite(entityId, i, 3);
+        }
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, VIEW_WIDTH-1, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, VIEW_WIDTH-1, 2);
         break;
     case MAZE_ANIMATION_PLEASURE_PLATE:
-        // maze_entity_type entityId = MAZE_ENTITY_PLEASURE_PLATE;
-        // memset(border, entityId, sizeof(border));
-        // lcdMsg(String(border), 0, 0);
-        // lcdMsg(String(border), 0, 3);
-        // lcdMsg("You step on a plat", 1, 1);
-        // lcdMsg("Something happened", 1, 2);
-        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
-        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
+        entityId = MAZE_ENTITY_PLEASURE_PLATE;
+        lcdClear();
+        lcdMsg("You step on a plat", 1, 1);
+        lcdMsg("Something happened", 1, 2);
+        for(int i = 0; i < VIEW_WIDTH; i++)
+        {
+            lcdWrite(entityId, i, 0);
+            lcdWrite(entityId, i, 3);
+        }
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, VIEW_WIDTH-1, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, VIEW_WIDTH-1, 2);
         break;
     case MAZE_ANIMATION_BTN:
-        // maze_entity_type entityId = MAZE_ENTITY_BTN;
-        // memset(border, entityId, sizeof(border));
-        // lcdMsg(String(border), 0, 0);
-        // lcdMsg(String(border), 0, 3);
-        // lcdMsg("You push a button", 2, 1);
-        // lcdMsg("Something happened", 1, 2);
-        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
-        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
+        entityId = MAZE_ENTITY_BTN;
+        lcdClear();
+        lcdMsg("You push a button", 2, 1);
+        lcdMsg("Something happened", 1, 2);
+        for(int i = 0; i < VIEW_WIDTH; i++)
+        {
+            lcdWrite(entityId, i, 0);
+            lcdWrite(entityId, i, 3);
+        }
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, VIEW_WIDTH-1, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, VIEW_WIDTH-1, 2);
         break;
     case MAZE_ANIMATION_BOX:
+        entityId = MAZE_ENTITY_BOX;
+        lcdClear();
+        lcdMsg("You open a box", 3, 1);
+        lcdMsg("Are you lucky?", 3, 2);
+        for(int i = 0; i < VIEW_WIDTH; i++)
+        {
+            lcdWrite(entityId, i, 0);
+            lcdWrite(entityId, i, 3);
+        }
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, VIEW_WIDTH-1, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, VIEW_WIDTH-1, 2);
         break;
     case MAZE_ANIMATION_WIN:
+        lcdClear();
         lcdMsg("You win!", 6, 0);
         lcdMsg("Congratulation", 3, 2);
         break;
     case MAZE_ANIMATION_LOSS:
+        lcdClear();
         lcdMsg("You lose!", 6, 0);
         lcdMsg("Try again next time", 0, 2);
         break;

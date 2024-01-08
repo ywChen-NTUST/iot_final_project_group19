@@ -19,6 +19,7 @@ def commandHandler(data: bytes) -> bytes:
     global keynum
     command = data[0]
     if command == Command.PING:
+        print("ping~pong")
         return bytes([Response.OK])
     elif command == Command.CREATEUSER:
         for uid,user in enumerate(users):
@@ -89,32 +90,27 @@ def commandHandler(data: bytes) -> bytes:
                     elif entity_type == EntityType.MAZE_ENTITY_PLEASURE_PLATE:
                         for i,entity_data in enumerate(all_entity_data):
                             print(all_entity_data, i, (pos_x, pos_y))
-                            if(len(entity_data) == 1):
-                                if (pos_x, pos_y) == entity_data[0]:
-                                    keynum += 1
-                                    all_entity_data.pop(i)
-                                    return bytes([Response.OK])
-                            else:
-                                if (entity_data[0] == users[0].getpos()) and (entity_data[1] == users[1].getpos()) \
-                                    or (entity_data[0] == users[1].getpos()) and (entity_data[1] == users[0].getpos()):
-                                    keynum += 1
-                                    all_entity_data.pop(i)
-                                    return bytes([Response.OK])
+                            if (pos_x, pos_y) == entity_data and keynum == 0:
+                                keynum += 1
+                                return bytes([Response.OK])
                     elif entity_type == EntityType.MAZE_ENTITY_BTN:
                         for i,entity_data in enumerate(all_entity_data):
                             print(all_entity_data, i, (pos_x, pos_y))
                             if (pos_x, pos_y) == (entity_data[0], entity_data[1]):
-                                if entity_data[2] == EntityType.MAZE_ENTITY_TRAP:
-                                    user.setlife(user.getlife() - 1)
-                                elif entity_data[2] == EntityType.MAZE_ENTITY_KEY:
-                                    keynum += 1
+                                endY = entity_data[2]
+                                for y in range(pos_y, endY, -1):
+                                    users[0].enque_unsyncqueue(pos_x, y, EntityType.MAZE_ENTITY_NONE)
+                                    users[1].enque_unsyncqueue(pos_x, y, EntityType.MAZE_ENTITY_NONE)
                                 all_entity_data.pop(i)
                                 return bytes([Response.OK])
                     elif entity_type == EntityType.MAZE_ENTITY_BOX:
                         for i,entity_data in enumerate(all_entity_data):
                             print(all_entity_data, i, (pos_x, pos_y))
-                            if (pos_x, pos_y) == entity_data:
-                                keynum += 1
+                            if (pos_x, pos_y) == (entity_data[0], entity_data[1]):
+                                if(entity_data[2] == 0):
+                                    user.setlife(user.getlife() - 1)
+                                else:
+                                    keynum += 1
                                 all_entity_data.pop(i)
                                 users[0].enque_unsyncqueue(pos_x, pos_y, EntityType.MAZE_ENTITY_NONE)
                                 users[1].enque_unsyncqueue(pos_x, pos_y, EntityType.MAZE_ENTITY_NONE)

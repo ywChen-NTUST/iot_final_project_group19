@@ -26,8 +26,6 @@ void task_display(void* pvParameters)
     int pos_x[3], pos_y[3], life[3], keynum_copy;
     while (1)
     {
-        display.lcdClear();
-
         for(int uid = 1; uid <= 2; uid++)
         {
             xSemaphoreTake(mutex_user, portMAX_DELAY);
@@ -36,6 +34,9 @@ void task_display(void* pvParameters)
             keynum_copy = keynum;
             xSemaphoreGive(mutex_user);
         }
+
+        display.showLife(life[myuid]);
+        display.showKey(keynum_copy);
         
         if(keynum_copy == 5)
         {
@@ -47,7 +48,7 @@ void task_display(void* pvParameters)
             display.showEvent(MAZE_ANIMATION_LOSS);
             vTaskDelay(100000);
         }
-        if(animeId == MAZE_ANIMATION_KEY)
+        if(animeId != MAZE_ANIMATION_NONE)
         {
             display.showEvent(animeId);
             animeId = MAZE_ANIMATION_NONE;
@@ -57,10 +58,6 @@ void task_display(void* pvParameters)
         xSemaphoreTake(mutex_maze, portMAX_DELAY);
         display.renderMaze(myuid, pos_x, pos_y);
         xSemaphoreGive(mutex_maze);
-
-        display.showLife(life[myuid]);
-        display.showKey(keynum_copy);
-        //Serial.printf("display Key: %d\n", keynum);
 
         vTaskDelay(200);
     }
@@ -272,7 +269,7 @@ void setup() {
     mutex_network = xSemaphoreCreateMutex();
     mutex_maze = xSemaphoreCreateMutex();
 
-    xTaskCreate(task_display, "task_display", 2000, NULL, 1, NULL);
+    xTaskCreate(task_display, "task_display", 4000, NULL, 1, NULL);
     xTaskCreate(task_download, "task_download", 4000, NULL, 2, NULL);
     xTaskCreate(task_input, "task_input", 4000, NULL, 3, NULL);
     xTaskCreate(task_upload, "task_upload", 4000, NULL, 4, NULL);

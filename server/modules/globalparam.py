@@ -11,25 +11,19 @@ class EntityType(IntEnum):
 
 entities = {
     EntityType.MAZE_ENTITY_KEY:[
-        (4, 1),
-        (8, 8),
+         (45, 6), (4, 22), (41, 61)
     ],
     EntityType.MAZE_ENTITY_TRAP: [
-        (2, 6),
+        (30, 26), (25, 30), (52, 30), (14, 41), (13, 42)
     ],
     EntityType.MAZE_ENTITY_PLEASURE_PLATE: [
-        [(8, 2), (4, 3)],
-        [(5, 3)]
+        (37, 26), (60, 39)
     ],
     EntityType.MAZE_ENTITY_BTN: [
-        (1, 8, EntityType.MAZE_ENTITY_TRAP),
-        (2, 8, EntityType.MAZE_ENTITY_KEY),
-        (3, 8, EntityType.MAZE_ENTITY_TRAP),
-        (4, 8, EntityType.MAZE_ENTITY_TRAP),
-        (5, 8, EntityType.MAZE_ENTITY_TRAP),
+        (31, 30, 26), (12, 38, 34), (55, 39, 32)
     ],
     EntityType.MAZE_ENTITY_BOX: [
-        (4, 6)
+        (8, 13, 1), (29, 26, 0), (51, 29, 1), (12, 40, 0), (8, 61, 0), (34, 61, 0) 
     ]
 }
 

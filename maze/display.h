@@ -4,6 +4,7 @@
 #include <Arduino.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include "global.h"
 
 enum MAZE_ANIMATION_TYPE {
     MAZE_ANIMATION_NONE = 0,
@@ -36,6 +37,7 @@ private:
     u_char _life_leds[5];
     u_char _key_leds[5];
     LiquidCrystal_I2C *_lcd;
+    u_char _maze_display_prev[VIEW_HEIGHT][VIEW_WIDTH];
 };
 
 #endif

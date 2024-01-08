@@ -129,6 +129,7 @@ void Display::renderMaze(const int myuid, const int pos_x[], const int pos_y[])
 void Display::showEvent(maze_animation_type animationid)
 {
     char border[20];
+    u_char entityId;
     switch (animationid)
     {
     case MAZE_ANIMATION_COVERPAGE:
@@ -137,18 +138,43 @@ void Display::showEvent(maze_animation_type animationid)
         lcdMsg("to create user", 3, 3);
         break;
     case MAZE_ANIMATION_KEY:
-        memset(border, MAZE_ENTITY_KEY, sizeof(border));
+        entityId = MAZE_ENTITY_KEY;
+        memset(border, entityId, sizeof(border));
         lcdMsg(String(border), 0, 0);
         lcdMsg(String(border), 0, 3);
         lcdMsg("You found a key!", 2, 1);
-        lcdWrite(MAZE_ENTITY_KEY, 0, 1); lcdWrite(MAZE_ENTITY_KEY, 19, 1);
-        lcdWrite(MAZE_ENTITY_KEY, 0, 2); lcdWrite(MAZE_ENTITY_KEY, 19, 2);
+        lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
+        lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
         break;
     case MAZE_ANIMATION_TRAP:
+        // maze_entity_type entityId = MAZE_ENTITY_TRAP;
+        // memset(border, entityId, sizeof(border));
+        // lcdMsg(String(border), 0, 0);
+        // lcdMsg(String(border), 0, 3);
+        // lcdMsg("You trigger a trap", 1, 1);
+        // lcdMsg("Ouch", 8, 2);
+        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
+        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
         break;
     case MAZE_ANIMATION_PLEASURE_PLATE:
+        // maze_entity_type entityId = MAZE_ENTITY_PLEASURE_PLATE;
+        // memset(border, entityId, sizeof(border));
+        // lcdMsg(String(border), 0, 0);
+        // lcdMsg(String(border), 0, 3);
+        // lcdMsg("You step on a plat", 1, 1);
+        // lcdMsg("Something happened", 1, 2);
+        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
+        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
         break;
     case MAZE_ANIMATION_BTN:
+        // maze_entity_type entityId = MAZE_ENTITY_BTN;
+        // memset(border, entityId, sizeof(border));
+        // lcdMsg(String(border), 0, 0);
+        // lcdMsg(String(border), 0, 3);
+        // lcdMsg("You push a button", 2, 1);
+        // lcdMsg("Something happened", 1, 2);
+        // lcdWrite(entityId, 0, 1); lcdWrite(entityId, 19, 1);
+        // lcdWrite(entityId, 0, 2); lcdWrite(entityId, 19, 2);
         break;
     case MAZE_ANIMATION_BOX:
         break;

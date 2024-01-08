@@ -15,6 +15,7 @@ Display display(
 User users[3]; // 0 is never used
 u_char myuid;
 u_char keynum = 0;
+maze_animation_type animeId = MAZE_ANIMATION_NONE;
 
 static SemaphoreHandle_t mutex_user;
 static SemaphoreHandle_t mutex_maze;
@@ -22,49 +23,75 @@ static SemaphoreHandle_t mutex_network;
 
 void task_display(void* pvParameters)
 {
-    int pos_x[3], pos_y[3], life[3];
+    int pos_x[3], pos_y[3], life[3], keynum_copy;
     while (1)
     {
         display.lcdClear();
+
         for(int uid = 1; uid <= 2; uid++)
         {
             xSemaphoreTake(mutex_user, portMAX_DELAY);
             users[uid].getPos(pos_x[uid], pos_y[uid]);
             life[uid] = users[uid].getLife();
+            keynum_copy = keynum;
             xSemaphoreGive(mutex_user);
         }
         
+        if(keynum_copy == 5)
+        {
+            display.showEvent(MAZE_ANIMATION_WIN);
+            vTaskDelay(100000);
+        }
+        if(life[myuid] == 0 || life[3-myuid] == 0)
+        {
+            display.showEvent(MAZE_ANIMATION_LOSS);
+            vTaskDelay(100000);
+        }
+        if(animeId == MAZE_ANIMATION_KEY)
+        {
+            display.showEvent(animeId);
+            animeId = MAZE_ANIMATION_NONE;
+            vTaskDelay(5000);
+        }
+
         xSemaphoreTake(mutex_maze, portMAX_DELAY);
         display.renderMaze(myuid, pos_x, pos_y);
         xSemaphoreGive(mutex_maze);
 
         display.showLife(life[myuid]);
-
-        xSemaphoreTake(mutex_user, portMAX_DELAY);
-        display.showKey(keynum);
+        display.showKey(keynum_copy);
         //Serial.printf("display Key: %d\n", keynum);
-        xSemaphoreGive(mutex_user);
 
-        vTaskDelay(100);
+        vTaskDelay(200);
     }
 }
 
 void task_input(void* pvParameters)
 {
     int curr_x, curr_y;
+    int life[3], keynum_copy;
     while (1)
     {
+
         xSemaphoreTake(mutex_user, portMAX_DELAY);
         users[myuid].getPos(curr_x, curr_y);
+        life[myuid] = users[myuid].getLife();
+        life[3-myuid] = users[3-myuid].getLife();
+        keynum_copy = keynum;
         xSemaphoreGive(mutex_user);
+
+        if(keynum_copy == 5 || life[myuid] == 0 || life[3-myuid] == 0)
+        {
+            vTaskDelay(100000);
+        }
 
         maze_control_type control_state = control.readControl();
         if(control_state != MAZE_CONTROL_NONE)
         {
             bool checks[4] = {true, true, true, true};
             xSemaphoreTake(mutex_maze, portMAX_DELAY);
-            checks[0] = control.checkPos(curr_x, curr_y+1);
-            checks[1] = control.checkPos(curr_x, curr_y-1);
+            checks[0] = control.checkPos(curr_x, curr_y-1);
+            checks[1] = control.checkPos(curr_x, curr_y+1);
             checks[2] = control.checkPos(curr_x-1, curr_y);
             checks[3] = control.checkPos(curr_x+1, curr_y);
             xSemaphoreGive(mutex_maze);
@@ -72,12 +99,12 @@ void task_input(void* pvParameters)
             if(control_state == MAZE_CONTROL_UP && checks[0])
             {
                 Serial.println("Control: up");
-                curr_y++;
+                curr_y--;
             }
             else if(control_state == MAZE_CONTROL_DOWN && checks[1])
             {
                 Serial.println("Control: down");
-                curr_y--;
+                curr_y++;
             }
             else if(control_state == MAZE_CONTROL_LEFT && checks[2])
             {
@@ -100,7 +127,10 @@ void task_input(void* pvParameters)
             maze_entity_type entity;
             xSemaphoreTake(mutex_maze, portMAX_DELAY);
             if(control_state == MAZE_CONTROL_ENTER)
+            {
+                Serial.println("Control: enter");
                 entity = control.interact(curr_x, curr_y);
+            }
             else
                 entity = control.checkEntity(curr_x, curr_y);
             xSemaphoreGive(mutex_maze);
@@ -108,9 +138,11 @@ void task_input(void* pvParameters)
             if (entity != MAZE_ENTITY_NONE)
             {
                 //Serial.printf("Entity %d\n", entity);
+                animeId = (maze_animation_type)entity;
                 xSemaphoreTake(mutex_network, portMAX_DELAY);
                 command.doEntity(entity, curr_x, curr_y);
                 xSemaphoreGive(mutex_network);
+                vTaskDelay(5000);
             }
         }
 
@@ -122,11 +154,20 @@ void task_upload(void* pvParameters)
 {
     int pos_x_prev = 1, pos_y_prev = 1;
     int pos_x, pos_y;
+    int life[3], keynum_copy;
     while (1)
     {
         xSemaphoreTake(mutex_user, portMAX_DELAY);
         users[myuid].getPos(pos_x, pos_y);
+        life[myuid] = users[myuid].getLife();
+        life[3-myuid] = users[3-myuid].getLife();
+        keynum_copy = keynum;
         xSemaphoreGive(mutex_user);
+
+        if(keynum_copy == 5 || life[myuid] == 0 || life[3-myuid] == 0)
+        {
+            vTaskDelay(100000);
+        }
 
         if (pos_x != pos_x_prev || pos_y != pos_y_prev)
         {
@@ -145,6 +186,7 @@ void task_download(void *pvParameters)
 {
     while (1)
     {
+
         xSemaphoreTake(mutex_network, portMAX_DELAY);
         xSemaphoreTake(mutex_user, portMAX_DELAY);
         u_char keynum_temp = command.getKeyNum();
@@ -153,7 +195,17 @@ void task_download(void *pvParameters)
         //Serial.printf("server Key: %d\n", keynum);
         xSemaphoreGive(mutex_user);
         xSemaphoreGive(mutex_network);
-        
+
+        int life_copy[3];
+        xSemaphoreTake(mutex_user, portMAX_DELAY);
+        life_copy[myuid] = users[myuid].getLife();
+        life_copy[3-myuid] = users[3-myuid].getLife();
+        xSemaphoreGive(mutex_user);
+        if(keynum == 5 || life_copy[myuid] == 0 || life_copy[3-myuid] == 0)
+        {
+            vTaskDelay(100000);
+        }
+
         xSemaphoreTake(mutex_network, portMAX_DELAY);
         xSemaphoreTake(mutex_maze, portMAX_DELAY);
         command.syncMaze();
@@ -201,9 +253,7 @@ void setup() {
 
     command.init(SSID, PASSWORD, SERVER, PORT);
 
-    display.lcdMsg("Welcome to Maze", 2, 0);
-    display.lcdMsg("Press enter", 4, 2);
-    display.lcdMsg("to create user", 3, 3);
+    display.showEvent(MAZE_ANIMATION_COVERPAGE);
     while(true)
     {
         // wait for user input enter btn

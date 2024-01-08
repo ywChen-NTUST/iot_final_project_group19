@@ -127,7 +127,7 @@ def commandHandler(data: bytes) -> bytes:
             for user in users:
                 if user.getToken() == token:
                     ret = []
-                    print(user.unsync_queue)
+                    # print(user.unsync_queue)
                     queuelength = len(user.unsync_queue)
                     for _ in range(queuelength):
                         x, y, newentitytype = user.deque_unsyncqueue()

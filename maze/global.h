@@ -20,4 +20,15 @@ extern u_char maze[MAZE_HEIGHT][MAZE_WIDTH];
 
 void maze_init();
 
+#define VIEW_WIDTH 20
+#define VIEW_HEIGHT 4
+
+const u_int8_t role_bitmap[8] = {B00000, B01110, B01010, B01010, B01010, B01110, B00100, B00000};
+const u_int8_t wall_bitmap[8] = {B11111, B11011, B11011, B10101, B10101, B11011, B11011, B11111};
+const u_int8_t key_bitmap[8] = {B00000, B01110, B01010, B01110, B00100, B00110, B00100, B00000};
+const u_int8_t plate_bitmap[8] = {B00000, B00000, B00000, B00000, B00000, B00000, B11111, B00000};
+const u_int8_t trap_bitmap[8] = {B00000, B00000, B00100, B00100, B00100, B00100, B01110, B00000};
+const u_int8_t box_bitmap[8] = {B00000, B01110, B11011, B10001, B10101, B11111, B10001, B11111};
+const u_int8_t button_bitmap[8] = {B00000, B00000, B00000, B00100, B00100, B01110, B11111, B00000};
+
 #endif

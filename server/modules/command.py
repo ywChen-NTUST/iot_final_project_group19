@@ -106,7 +106,7 @@ def commandHandler(data: bytes) -> bytes:
                     elif entity_type == EntityType.MAZE_ENTITY_BOX:
                         for i,entity_data in enumerate(all_entity_data):
                             print(all_entity_data, i, (pos_x, pos_y))
-                            if (pos_x, pos_y) == (entity_data[0], entity_data[1]):
+                            if (pos_x, pos_y) == (entity_data[0], entity_data[1]) and keynum > 0:
                                 if(entity_data[2] == 0):
                                     keynum -= 1
                                     user.setlife(user.getlife() - 1)
